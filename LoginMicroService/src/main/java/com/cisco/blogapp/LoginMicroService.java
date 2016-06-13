@@ -8,6 +8,7 @@ import java.io.Reader;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -45,6 +46,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
+import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -86,48 +88,9 @@ public class LoginMicroService extends AbstractVerticle{
 		router.post("/Services/rest/user/register").handler(new UserRegister());
 		router.get("/Services/rest/user").handler(new UserLoader());
 		router.post("/Services/rest/user/auth").handler(new UserAuth());
-//		router.get("/Services/rest/blogs").handler(new BlogGet());
-//		router.post("/Services/rest/blogs").handler(new BlogPost());
-//		router.post("/Services/rest/blogs/:blogId/comments").handler(new BlogComment());
-//	    router.get("/Services/rest/company/:companyId/sites").handler(this::handleGetSitesOfCompany);
-//		router.get("/Services/rest/company/:companyId/sites/:siteId/departments").handler(this::handleGetDepartmentsOfSite);
-		
-		
-		
-//		// Using Lambda Function
-//		router.get("/Services/rest/company").handler( (routingContext) -> {
-//			System.out.println("GEt comapnies");
-//			
-//		//sande
-//			if (false){
-//				
-//				JsonArray resJson = new JsonArray().add(
-//						new JsonObject().put("id", "55716669eec5ca2b6ddf5626").put("companyName", "Cisco").put("subdomain", "nds")
-//					).add(
-//							new JsonObject().put("id", "559e4331c203b4638a00ba1a").put("companyName", "Acme Inc").put("subdomain", "acme")
-//					);
-//				System.out.println(resJson.encode());
-//				routingContext.response().putHeader("content-type", "application/json").end(resJson.encode());
-//				
-//			}else{
-//				JsonArray companyList = new JsonArray();
-//				try {
-//					
-//					companyList = readJsonFromUrl("http://localhost:8082/Services/rest/company");
-//					System.out.println("companies "+companyList.toString());
-//				} catch (Exception e) {
-//					// TODO Auto-generated catch block
-//					System.out.println("exception ---------------------------------- ");
-//					e.printStackTrace();
-//				}
-//				routingContext.response().putHeader("content-type", "application/json").end(companyList.encode());
-//			}
-//			
-//		});
-//		
-		// StaticHanlder for loading frontend angular app
-				router.route().handler(StaticHandler.create()::handle);
 
+		// StaticHanlder for loading frontend angular app
+		router.route().handler(StaticHandler.create()::handle);
 		vertx.createHttpServer().requestHandler(router::accept).listen(8086);	
 		System.out.println("BlogAppVerticle verticle started");
 		startFuture.complete();
@@ -138,29 +101,25 @@ public class LoginMicroService extends AbstractVerticle{
 		System.out.println("BlogAppVerticle stopped");
 		stopFuture.complete();
 	}
-	
-//	private static String readAll(Reader rd) throws IOException {
-//	    StringBuilder sb = new StringBuilder();
-//	    int cp;
-//	    while ((cp = rd.read()) != -1) {
-//	      sb.append((char) cp);
-//	    }
-//	    return sb.toString();
-//	  }
-
-//	private JsonArray readJsonFromUrl(String url) throws IOException, EncodeException {
-//	    InputStream is = new URL(url).openStream();
-//	    try {
-//	      BufferedReader rd = new BufferedReader(new InputStreamReader(is, Charset.forName("UTF-8")));
-//	      String jsonText = readAll(rd);
-//	      JsonArray json = new JsonArray(jsonText);
-//	      System.out.println(jsonText);
-//	      System.out.println(json);
-//	      return json;
-//	    } finally {
-//	      is.close();
-//	    }
-//	  }
+	class Credentials{
+    	String userName;
+    	String password;
+    }
+	private boolean GetCredentials(final String authorization, Credentials credObject){
+		boolean status = false;
+		if (authorization != null && authorization.startsWith("Basic")) {
+	        // Authorization: Basic base64credentials
+	        String base64Credentials = authorization.substring("Basic".length()).trim();
+	        String credentials = new String(Base64.getDecoder().decode(base64Credentials),
+	                Charset.forName("UTF-8"));
+	        // credentials = username:password
+	        final String[] values = credentials.split(":",2);
+	        credObject.userName = values[0];
+	        credObject.password = values[1];
+	        System.out.println("user and password :"+values[0]+" " +values[1]);
+	    }
+		return status;
+	}
 
 	class UserRegister implements Handler<RoutingContext> {
 		public void handle(RoutingContext routingContext) {
@@ -178,63 +137,77 @@ public class LoginMicroService extends AbstractVerticle{
 			}
 			// Map UserDTO to User Model
 			User u = dto.toModel();
-			routingContext.vertx().executeBlocking((future) -> {
-				System.out.println("Inside Execute Blocking!!!");
-				Datastore dataStore = ServicesFactory.getMongoDB();
-				// Store User into MongoDB
-				dataStore.save(u);
-				future.complete();
-			}, res -> {
-				if(res.succeeded()) {
-					response.setStatusCode(204).end("Data saved");
-				} else {
-					response.setStatusCode(500).end("Data Not Saved");
-				}
-			});
+			String userName = u.getUserName();
+			Datastore dataStore = ServicesFactory.getMongoDB();
+			List<User> users = dataStore.createQuery(User.class)
+					.field("userName").equal(userName).asList();
+			if (users.size() == 0) {
+				routingContext.vertx().executeBlocking((future) -> {
+					System.out.println("Inside Execute Blocking!!!");
+					// Store User into MongoDB
+					dataStore.save(u);
+					future.complete();
+				}, res -> {
+					if(res.succeeded()) {
+						response.setStatusCode(204).end("Data saved");
+					} else {
+						response.setStatusCode(500).end("Data Not Saved");
+					}
+				});
+			}
+			else{
+				response.setStatusCode(500).end("UserName taken already");
+			}
+			
 			
 			
 		}
 	}
-
+    
 	class UserAuth implements Handler<RoutingContext> {
 	
 		public void handle(RoutingContext routingContext) {
 			System.out.println("Thread UserAuth: " + Thread.currentThread().getId());
-	
-			HttpServerResponse response = routingContext.response();
-			Session session = routingContext.session();
-	
-			Datastore dataStore = ServicesFactory.getMongoDB();
-			// Get Request Body that contains login details
-			String json = routingContext.getBodyAsString();
-			System.out.println("User login details" + json);
-			JsonObject jsonObj = new JsonObject(json);
-			// Get userName and password from jsonObj
-			String user = jsonObj.getString("userName");
-			String passwd = jsonObj.getString("password");
-			System.out.println("userName :" + user + " password : " +passwd);
-			
-			// Query DB for the User matching with the given userName
-			List<User> users = dataStore.createQuery(User.class)
-					.field("userName").equal(user).asList();
-			if (users.size() != 0) {
-				for (User u : users) {
-					// See if user's password matched
-					if (u.getPassword().equals(passwd)) {
-						if(session != null) {
-							session.put("user", u.getUserName());
-						}
-						// Add to the list of LoggedInUsers hashmap
-						LoginMicroService.loggedInUsers.put(u.getUserName(), u);
-						response.setStatusCode(204).end("User Authentication Success !!!");
-						break;
-					}
-				}
-			} else {
-				response.setStatusCode(404).end("not found");
-			}
-		}
+			try {
+				
+				HttpServerResponse response = routingContext.response();
+				
+//				Session session = routingContext.session();
 		
+				Datastore dataStore = ServicesFactory.getMongoDB();
+				// Get Request Body that contains login details
+				
+				HttpServerRequest request = routingContext.request();
+				final String authorization = request.getHeader("Authorization");
+				Credentials cred = new Credentials();
+				GetCredentials(authorization,cred);
+				System.out.println("userName :" + cred.userName + " password : " +cred.password);
+				
+				// Query DB for the User matching with the given userName
+				List<User> users = dataStore.createQuery(User.class)
+						.field("userName").equal(cred.userName).asList();
+				if (users.size() != 0) {
+					for (User u : users) {
+						// See if user's password matched
+						if (u.getPassword().equals(cred.password) && u.getUserName().equals(cred.userName)) {
+							System.out.println(cred.userName +" User Authentication Success !!!");
+							// Add to the list of LoggedInUsers hashmap
+							LoginMicroService.loggedInUsers.put(u.getUserName(), u);
+							response.setStatusCode(204).end("User Authentication Success !!!");
+							break;
+						}
+					}
+				} else {
+					response.setStatusCode(404).end("not found");
+				}
+
+			}
+			catch(Exception e){
+				
+				e.printStackTrace();
+			}
+					
+		}
 	}
 
 
@@ -244,20 +217,40 @@ public class LoginMicroService extends AbstractVerticle{
 					+ Thread.currentThread().getId());
 			// This handler will be called for every request
 			HttpServerResponse response = routingContext.response();
+			Datastore dataStore = ServicesFactory.getMongoDB();
 			MultiMap params = routingContext.request().params();
 	
 			if (params.size() > 0) {
 				if (params.contains("signedIn")) {
-					ArrayList<User> userList = new ArrayList<User>();
-					for(Map.Entry<String, User> m: LoginMicroService.loggedInUsers.entrySet()){  
-						userList.add(m.getValue());  
-					}  
-					ObjectMapper mapper = new ObjectMapper();
-					JsonNode node = mapper.valueToTree(userList);
-					System.out.println("Logged in users List: " + node.toString());
-					response.putHeader("content-type", "application/json");
-					String json = node.toString();
-					response.setStatusCode(200).end(json);
+					HttpServerRequest request = routingContext.request();
+					final String authorization = request.getHeader("Authorization");
+					Credentials cred = new Credentials();
+					GetCredentials(authorization,cred);
+					System.out.println("userName :" + cred.userName + " password : " +cred.password);
+					
+					// Query DB for the User matching with the given userName
+					List<User> users = dataStore.createQuery(User.class)
+							.field("userName").equal(cred.userName).asList();
+						
+						for (User u : users) {
+							// See if user's password matched
+							if (u.getPassword().equals(cred.password) && u.getUserName().equals(cred.userName)) {
+								System.out.println(cred.userName +" User Authentication Success !!!");
+								// Add to the list of LoggedInUsers hashmap
+								ArrayList<User> userList = new ArrayList<User>();
+								for(Map.Entry<String, User> m: LoginMicroService.loggedInUsers.entrySet()){  
+									userList.add(m.getValue());  
+								}  
+								ObjectMapper mapper = new ObjectMapper();
+								JsonNode node = mapper.valueToTree(userList);
+								System.out.println("Logged in users List: " + node.toString());
+								response.putHeader("content-type", "application/json");
+								String json = node.toString();
+								response.setStatusCode(200).end(json);
+								break;
+							}
+						}
+
 				}
 			}
 		}

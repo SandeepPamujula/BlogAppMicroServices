@@ -63,8 +63,21 @@
 					$scope.error = status;
 				});
 		var ws=null;
-		$http.get('/Services/rest/user?signedIn=true').success(
-				function(data, status, headers, config) {
+        console.log("login successfull " +$rootScope.globals.currentUser.userName+ ":" + $rootScope.globals.currentUser.password);
+        
+//		$http.get('/Services/rest/user?signedIn=true').success(
+            var req = {
+                 method: 'GET',
+                 url: '/Services/rest/user?signedIn=true',
+                 headers: {
+                   'Authorization': "Basic " + btoa($rootScope.globals.currentUser.userName + ":" + $rootScope.globals.currentUser.password)
+                 },
+            };
+        
+        console.log("sande AppHomeController: "+$rootScope.globals.currentUser.userName + ":" + $rootScope.globals.currentUser.password);
+            
+        $http(req)
+         .then(function(data, status, headers, config) {
 					$scope.connectedUsers = data;
 					$scope.loading = false;
 					//Setup a websocket connection to server using current host
@@ -152,6 +165,7 @@
 	//------------------------------------------------------------------------------------------------------------------
 	app.controller('LoginController', function($http, $log, $scope, $location,
 			$rootScope) {
+        
 		var controller = this;
 		$scope.isLoadingCompanies = true;
 		$http.get('/Services/rest/company').success(
@@ -163,12 +177,28 @@
 					$scope.error = status;
 				});
 		$scope.login = function(user) {
-			$log.debug("Logging in user...");
-			$http.post("/Services/rest/user/auth", user).success(
-					function() {
+			$log.debug("Logging in user..."+user.userName);
+            $rootScope.globals = {
+                currentUser:{
+                    userName: user.userName,
+                    password: user.password
+                }
+            };
+            
+            var req = {
+                 method: 'POST',
+                 url: '/Services/rest/user/auth',
+                 headers: {
+                   'Authorization': "Basic " + btoa(user.userName + ":" + user.password)
+                 },
+            };
+            
+             $http(req)
+                .then(function(){
+                        console.log("login successfull " +$rootScope.globals.currentUser.userName+ ":" + $rootScope.globals.currentUser.password);
 						$rootScope.loggedIn = true;
 						$location.path("/");
-					});
+             });
 		};
 		$scope.register = function() {
 			$log.debug("Navigating to register...");
