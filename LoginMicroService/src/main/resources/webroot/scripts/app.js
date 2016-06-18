@@ -46,14 +46,31 @@
 		// Http Intercpetor to check auth failures for xhr requests
 		$httpProvider.interceptors.push('authHttpResponseInterceptor');
 	} ]);
+    app.factory('dataService', function() {
 
+          // private object
+          var _userObj = {
+              userName: "",
+              password:""
+          };
+
+        return {
+                getUser: function () {
+                    return _userObj;
+                },
+                setUser: function(user) {
+                    _userObj = user;
+                }
+            };
+    });
 	//------------------------------------------------------------------------------------------------------------------
 	// Controller for the home page with blogs and live users
 	//------------------------------------------------------------------------------------------------------------------
 	app.controller('AppHomeController', function($http, $log, $scope,
-			$rootScope, $websocket, $location) {
+			$rootScope, $websocket, $location,dataService) {
 		var controller = this;
 		$log.debug("AppHomeController...");
+        var $rootScope.globals.currentUser = dataService.getUser();
         
          var blogReq = {
                  method: 'GET',
@@ -209,7 +226,7 @@
 	// Controller for the login view and the registration screen
 	//------------------------------------------------------------------------------------------------------------------
 	app.controller('LoginController', function($http, $log, $scope, $location,
-			$rootScope) {
+			$rootScope,dataService) {
         
 		var controller = this;
 		$scope.isLoadingCompanies = true;
@@ -228,6 +245,7 @@
                     userName: user.userName,
                     password: user.password
                 }
+                dataService.setUser($rootScope.globals.currentUser);
             };
             
             var req = {
