@@ -50,7 +50,7 @@ public class LoginMicroVerticle extends AbstractVerticle{
 	public void start(Future<Void> startFuture){
 		
 		Router router = Router.router(vertx);
-		LocalSessionStore sessionStore = LocalSessionStore.create(vertx);
+//		LocalSessionStore sessionStore = LocalSessionStore.create(vertx);
 		
 		// Handlers to get request bodies and 
 		// for cookies and sessions
@@ -79,8 +79,10 @@ public class LoginMicroVerticle extends AbstractVerticle{
 
 		// StaticHanlder for loading frontend angular app
 		router.route().handler(StaticHandler.create()::handle);
+		
 		int port = 8086;
-		vertx.createHttpServer().requestHandler(router::accept).listen(port);	
+		vertx.createHttpServer().requestHandler(router::accept).listen(port);
+		router.route().handler(StaticHandler.create().setMaxAgeSeconds(0));
 		System.out.println("BlogAppVerticle verticle started: "+port);
 		startFuture.complete();
 	}
