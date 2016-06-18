@@ -307,10 +307,11 @@
 //							function() {
         var req = {
              method: 'POST',
-             url: '/Services/rest/user/auth',
+             url: '/Services/rest/blogs',
              headers: {
                'Authorization': "Basic " + btoa(user.userName + ":" + user.password)
-             }
+             },
+            data: blog
         };
 
         $http(req)
