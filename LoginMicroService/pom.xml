@@ -7,7 +7,7 @@
   <packaging>jar</packaging>
 
   <properties>
-    <main.class>com.cisco.blogapp.LoginMicroService</main.class>
+    <main.class>com.cisco.blogapp.BlogMicroVerticle</main.class>
   </properties>
   
    <dependencies>
