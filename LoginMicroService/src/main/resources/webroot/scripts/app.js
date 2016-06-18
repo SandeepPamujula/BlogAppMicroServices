@@ -70,7 +70,14 @@
 			$rootScope, $websocket, $location,dataService) {
 		var controller = this;
 		$log.debug("AppHomeController...");
-        var $rootScope.globals.currentUser = dataService.getUser();
+        $rootScope.globals = {
+                currentUser:{
+                    userName:"",
+                    password:""
+                }
+        };
+        
+        $rootScope.globals.currentUser = dataService.getUser();
         
          var blogReq = {
                  method: 'GET',
@@ -245,9 +252,8 @@
                     userName: user.userName,
                     password: user.password
                 }
-                dataService.setUser($rootScope.globals.currentUser);
             };
-            
+            dataService.setUser($rootScope.globals.currentUser);
             var req = {
                  method: 'POST',
                  url: '/Services/rest/user/auth',
