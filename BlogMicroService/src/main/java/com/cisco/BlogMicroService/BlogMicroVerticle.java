@@ -2,7 +2,9 @@ package com.cisco.BlogMicroService;
 
 
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -11,7 +13,7 @@ import java.util.Map;
 import org.bson.types.ObjectId;
 import org.mongodb.morphia.Datastore;
 
-import com.cisco.BlogMicroService.dbconn.MongoConnect;
+import com.cisco.BlogMicroService.dbconn.ServicesFactory;
 import com.cisco.BlogMicroService.model.Blog;
 import com.cisco.BlogMicroService.model.BlogDTO;
 import com.cisco.BlogMicroService.model.User;
@@ -27,6 +29,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
+import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -66,25 +69,11 @@ public class BlogMicroVerticle extends AbstractVerticle{
 	    router.route().handler(CookieHandler.create());
 	    router.route().handler(SessionHandler.create(sessionStore));
 	    
-	    router.get("/Services/rest/company/:companyId/sites").handler(this::handleGetSitesOfCompany);
-		router.get("/Services/rest/company/:companyId/sites/:siteId/departments").handler(this::handleGetDepartmentsOfSite);
 		router.post("/Services/rest/blogs").handler(new BlogPost());
 		router.get("/Services/rest/blogs").handler(new BlogGet());
 		router.post("/Services/rest/blogs/:blogId/comments").handler(new BlogComment());
 
-		// Using Lambda Function
-		router.get("/Services/rest/company").handler( (routingContext) -> {
-			System.out.println("GEt comapnies");
-			JsonArray resJson = new JsonArray().add(
-					new JsonObject().put("id", "55716669eec5ca2b6ddf5626").put("companyName", "Cisco").put("subdomain", "nds")
-				).add(
-						new JsonObject().put("id", "559e4331c203b4638a00ba1a").put("companyName", "Acme Inc").put("subdomain", "acme")
-				);
-			System.out.println(resJson.encode());
-			
-			routingContext.response().putHeader("content-type", "application/json").end(resJson.encode());
-		});
-		
+
 		// StaticHanlder for loading frontend angular app
 				router.route().handler(StaticHandler.create()::handle);
 
@@ -98,31 +87,30 @@ public class BlogMicroVerticle extends AbstractVerticle{
 		System.out.println("BlogMicroVerticle stopped");
 		stopFuture.complete();
 	}
-	
-	private void handleGetSitesOfCompany(RoutingContext routingContext) {	
-		JsonArray resJson = new JsonArray().add(
-				new JsonObject()
-				.put("id", "55716669eec5ca2b6ddf5627")
-				.put("siteName", "Acme Inc")
-				.put("companyId", "55716669eec5ca2b6ddf5626")
-				.put("subdomain", "acme")
-			);
-		routingContext.response().putHeader("content-type", "application/json").end(resJson.encode());
-	}
-	
-	private void handleGetDepartmentsOfSite(RoutingContext routingContext) {
-		JsonArray resJson = new JsonArray().add(
-				new JsonObject()
-				.put("id", "55716669eec5ca2b6ddf5628")
-				.put("deptName", "Sales")
-				.put("siteId", "55716669eec5ca2b6ddf5627")
-			);
-		routingContext.response().putHeader("content-type", "application/json").end(resJson.encode());
-	}
-	
+			
 
+	class Credentials{
+		String userName;
+		String password;
+	
 		
-}
+	}
+	
+	private boolean GetCredentials(final String authorization, Credentials credObject){
+		boolean status = false;
+		if (authorization != null && authorization.startsWith("Basic")) {
+	        // Authorization: Basic base64credentials
+	        String base64Credentials = authorization.substring("Basic".length()).trim();
+	        String credentials = new String(Base64.getDecoder().decode(base64Credentials),
+	                Charset.forName("UTF-8"));
+	        // credentials = username:password
+	        final String[] values = credentials.split(":",2);
+	        credObject.userName = values[0];
+	        credObject.password = values[1];
+	        System.out.println("user and password :"+values[0]+" " +values[1]);
+	    }
+		return status;
+	}
 
 class BlogComment implements Handler<RoutingContext> {
 	public void handle(RoutingContext routingContext) {
@@ -131,25 +119,30 @@ class BlogComment implements Handler<RoutingContext> {
 		HttpServerResponse response = routingContext.response();
 		String blogId = routingContext.request().getParam("blogId");
 		System.out.println("blogId: " + blogId);
-		Session session = routingContext.session();
+
+		Datastore dataStore = ServicesFactory.getMongoDB();
+		// Get Request Body that contains login details
+		HttpServerRequest request = routingContext.request();
+		final String authorization = request.getHeader("Authorization");
+		Credentials cred = new Credentials();
+		GetCredentials(authorization,cred);
+		System.out.println("userName :" + cred.userName + " password : " +cred.password);
+		
 		response.putHeader("content-type", "application/json");
 	
 		String json = routingContext.getBodyAsString();
 		ObjectMapper mapper = new ObjectMapper();
-		Datastore dataStore = MongoConnect.getMongoDB();
+		
 		CommentDTO dto = null;
 		try {
 			dto = mapper.readValue(json, CommentDTO.class);
 			
-			// TBD: get the user from AUTH
-			String userName = "sande";//session.get("user");
-			System.out.println("userName :" + userName);
-			if (userName == null ) {
+			if (cred.userName == null ) {
 				System.out.println("No Valid user logged in");
 				response.setStatusCode(401).end("No Valid user logged in");
 			} else {
 				User user = dataStore.createQuery(User.class)
-						.field("userName").equal(userName).get();
+						.field("userName").equal(cred.userName).get();
 				dto.setUserFirst(user.getFirst());
 				dto.setUserLast(user.getLast());
 				dto.setUserId(user.getId().toString());
@@ -182,7 +175,7 @@ class BlogGet implements Handler<RoutingContext> {
 		System.out.println("Thread BlogList: " + Thread.currentThread().getId());
 		HttpServerResponse response = routingContext.response();
 		response.putHeader("content-type", "application/json");
-		Datastore dataStore = MongoConnect.getMongoDB();
+		Datastore dataStore = ServicesFactory.getMongoDB();
 
 		// For tag search
 		String tagParam = routingContext.request().query();
@@ -215,36 +208,44 @@ class BlogGet implements Handler<RoutingContext> {
 }
 
 
-class BlogPost implements Handler<RoutingContext> {
-	public void handle(RoutingContext routingContext) {
-		System.out.println("Thread BlogPersister: "
-				+ Thread.currentThread().getId());
-		HttpServerResponse response = routingContext.response();
-		String json = routingContext.getBodyAsString();
-		System.out.println("User:" + json);
-		ObjectMapper mapper = new ObjectMapper();
-		Datastore dataStore = MongoConnect.getMongoDB();
-		BlogDTO dto = null;
-		try {
-				dto = mapper.readValue(json, BlogDTO.class);
-				
-				// TBD: get the user details from URL
-				String userName = "sande";
-				User user = dataStore.createQuery(User.class)
-						.field("userName").equal(userName).get();
-				System.out.println(user);
-				dto.setUserFirst(user.getFirst());
-				dto.setUserLast(user.getLast());
-				dto.setUserId(user.getId().toString());
-				dto.setDate(new Date().getTime());
-				Blog blog = dto.toModel();
-				dataStore.save(blog);
-				response.setStatusCode(204).end("Blog saved !!");
+	class BlogPost implements Handler<RoutingContext> {
+		public void handle(RoutingContext routingContext) {
+			System.out.println("Thread BlogPersister: "
+					+ Thread.currentThread().getId());
+			HttpServerResponse response = routingContext.response();
+			String json = routingContext.getBodyAsString();
+			System.out.println("User:" + json);
+			ObjectMapper mapper = new ObjectMapper();
+			BlogDTO dto = null;
 			
-		} catch (IOException e) {
-			e.printStackTrace();
-		}		
+			
+			Datastore dataStore = ServicesFactory.getMongoDB();
+			// Get Request Body that contains login details
+			HttpServerRequest request = routingContext.request();
+			final String authorization = request.getHeader("Authorization");
+			Credentials cred = new Credentials();
+			GetCredentials(authorization,cred);
+			System.out.println("userName :" + cred.userName + " password : " +cred.password);
+			
+			
+			
+			try {
+					dto = mapper.readValue(json, BlogDTO.class);
+					User user = dataStore.createQuery(User.class)
+							.field("userName").equal(cred.userName).get();
+					System.out.println(user);
+					dto.setUserFirst(user.getFirst());
+					dto.setUserLast(user.getLast());
+					dto.setUserId(user.getId().toString());
+					dto.setDate(new Date().getTime());
+					Blog blog = dto.toModel();
+					dataStore.save(blog);
+					response.setStatusCode(204).end("Blog saved !!");
+				
+			} catch (IOException e) {
+				e.printStackTrace();
+			}		
+		}
 	}
 }
-
 

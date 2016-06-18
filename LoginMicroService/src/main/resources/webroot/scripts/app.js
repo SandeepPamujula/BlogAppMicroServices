@@ -5,9 +5,9 @@
 	var app = angular.module('mysocial', [ 'ngRoute','textAngular','ngWebsocket' ]);
 	app.run(function($http,$rootScope,$location,$log,$websocket) {
 		$log.debug("App run...");
+          $log.debug(">>---------   hii ------------------------------------------>   ");
 		$rootScope.currentPath = $location.path()
 	});
-
 	//ROUTE configurations for all views
 	app.config([ '$routeProvider', function($routeProvider) {
 		$routeProvider.when('/', {
@@ -54,16 +54,30 @@
 			$rootScope, $websocket, $location) {
 		var controller = this;
 		$log.debug("AppHomeController...");
-		$http.get('/Services/rest/blogs').success(
+        
+         var blogReq = {
+                 method: 'GET',
+                 url: '/Services/rest/blogs',
+                 headers: {
+                   'Authorization': "Basic " + btoa($rootScope.globals.currentUser.userName + ":" + $rootScope.globals.currentUser.password)
+                 }
+            };
+        
+        
+        $http(blogReq)
+         .then(function successCallback(data, status, headers, config) {
+//		$http.get('/Services/rest/blogs').success(
 				function(data, status, headers, config) {
 					$scope.blogs = data;
 					$scope.loading = false;
-				}).error(function(data, status, headers, config) {
+				},function errorCallback(data, status, headers, config) {
+//            ).error(function(data, status, headers, config) {
 					$scope.loading = false;
 					$scope.error = status;
 				});
 		var ws=null;
-        console.log("login successfull " +$rootScope.globals.currentUser.userName+ ":" + $rootScope.globals.currentUser.password);
+        console.log("login successfull " );
+        console.log("sande1 : "+$rootScope.globals.currentUser.userName+ ":" + $rootScope.globals.currentUser.password);
         
 //		$http.get('/Services/rest/user?signedIn=true').success(
             var req = {
@@ -71,13 +85,15 @@
                  url: '/Services/rest/user?signedIn=true',
                  headers: {
                    'Authorization': "Basic " + btoa($rootScope.globals.currentUser.userName + ":" + $rootScope.globals.currentUser.password)
-                 },
+                 }
             };
         
-        console.log("sande AppHomeController: "+$rootScope.globals.currentUser.userName + ":" + $rootScope.globals.currentUser.password);
+        console.log("sande AppHomeController signin: "+$rootScope.globals.currentUser.userName + ":" + $rootScope.globals.currentUser.password);
             
         $http(req)
-         .then(function(data, status, headers, config) {
+         .then(function successCallback(data, status, headers, config) {
+                    console.log("sande AppHomeController: data "+data);
+
 					$scope.connectedUsers = data;
 					$scope.loading = false;
 					//Setup a websocket connection to server using current host
@@ -87,7 +103,7 @@
 			            $log.debug('Socket is open');
 			        });
 			        
-			        ws.$on('$message', function(data){
+			        ws.$on('$message', function (data){
 			        	 $log.debug('The websocket server has sent the following data:');
 			        	 $log.debug(data);
 			        	 $log.debug(data.messageType);
@@ -121,16 +137,32 @@
 			            console.log('Web socket closed');
 			            ws.$close();
 			        });
-				}).error(function(data, status, headers, config) {
+				},function errorCallback(data, status, headers, config) {
 					$scope.loading = false;
 					$scope.error = status;
-				});
+				}); 
+        console.log("hii"); 
+//            .error(function(data, status, headers, config) {
+//					$scope.loading = false;
+//					$scope.error = status;
+//				});
 			$scope.tagSearch = function(){
-				$http.get('/Services/rest/blogs?tag='+$scope.searchTag).success(
-					function(data, status, headers, config) {
+                
+                 var req = {
+                     method: 'GET',
+                     url: '/Services/rest/blogs?tag='+$scope.searchTag,
+                     headers: {
+                       'Authorization': "Basic " + btoa($rootScope.globals.currentUser.userName + ":" + $rootScope.globals.currentUser.password)
+                     }
+                 };
+//				$http.get('/Services/rest/blogs?tag='+$scope.searchTag).success(
+                $http(req)
+                    .then(function successCallback(data, status, headers, config) {
+//					function(data, status, headers, config) {
 						$scope.blogs = data;
 						$scope.loading = false;
-					}).error(function(data, status, headers, config) {
+					},function errorCallback(data, status, headers, config) {
+//                         ).error(function(data, status, headers, config) {
 						$scope.loading = false;
 						$scope.error = status;
 					});
@@ -138,8 +170,20 @@
 			$scope.submitComment = function(comment, blogId){
 				$log.debug(comment);
 				//var blogId = comment.blogId;
-				$http.post('/Services/rest/blogs/'+blogId+'/comments',comment).success(
-					function(data, status, headers, config) {
+                
+                 var req = {
+                     method: 'POST',
+                     url: '/Services/rest/blogs/'+blogId+'/comments',
+                     headers: {
+                       'Authorization': "Basic " + btoa($rootScope.globals.currentUser.userName + ":" + $rootScope.globals.currentUser.password)
+                     },
+                     data: comment
+                 };
+                
+//				$http.post('/Services/rest/blogs/'+blogId+'/comments',comment).success(
+//					function(data, status, headers, config) {
+                $http(req)
+                    .then(function successCallback(data, status, headers, config) {
 						$scope.loading = false;
 						for(var index in $scope.blogs){
 							if($scope.blogs[index].id==blogId){
@@ -148,7 +192,8 @@
 								break;
 							}
 						}
-					}).error(function(data, status, headers, config) {
+					},function errorCallback(data, status, headers, config) {
+//                         ).error(function(data, status, headers, config) {
 						$scope.loading = false;
 						$scope.error = status;
 					});
@@ -190,7 +235,7 @@
                  url: '/Services/rest/user/auth',
                  headers: {
                    'Authorization': "Basic " + btoa(user.userName + ":" + user.password)
-                 },
+                 }
             };
             
              $http(req)
@@ -252,20 +297,31 @@
 	// Controller for new blog post view
 	//------------------------------------------------------------------------------------------------------------------
 	app.controller('BlogController',function($http, $log, $scope, $location) {
-				var controller = this;
-				$log.debug("Blog controller...");
-				$scope.blog={};
-				$scope.blog.content = 'Blog text here...';
-				$scope.saveBlog = function(blog){
-					$http.post("/Services/rest/blogs", blog).success(
-							function() {
-								$log.debug("Saved blog...");
-								$location.path("/");
-							});
-				};
-				$scope.cancel = function(blog){
-					$location.path("/");
-				};
+        var controller = this;
+        $log.debug("Blog controller...");
+        $scope.blog={};
+        $scope.blog.content = 'Blog text here...';
+        $scope.saveBlog = function(blog){
+
+//					$http.post("/Services/rest/blogs", blog).success(
+//							function() {
+        var req = {
+             method: 'POST',
+             url: '/Services/rest/user/auth',
+             headers: {
+               'Authorization': "Basic " + btoa(user.userName + ":" + user.password)
+             }
+        };
+
+        $http(req)
+         .then(function(){
+                        $log.debug("Saved blog...");
+                        $location.path("/");
+                    });
+        };
+        $scope.cancel = function(blog){
+            $location.path("/");
+        };
 	});
 
 })($);//Passing jquery object just in case 

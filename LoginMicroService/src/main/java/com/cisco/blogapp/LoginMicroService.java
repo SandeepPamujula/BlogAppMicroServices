@@ -88,6 +88,20 @@ public class LoginMicroService extends AbstractVerticle{
 		router.post("/Services/rest/user/register").handler(new UserRegister());
 		router.get("/Services/rest/user").handler(new UserLoader());
 		router.post("/Services/rest/user/auth").handler(new UserAuth());
+		router.get("/Services/rest/company/:companyId/sites").handler(this::handleGetSitesOfCompany);
+		// Using Lambda Function
+		router.get("/Services/rest/company").handler( (routingContext) -> {
+			System.out.println("GEt comapnies");
+			JsonArray resJson = new JsonArray().add(
+					new JsonObject().put("id", "55716669eec5ca2b6ddf5626").put("companyName", "Cisco").put("subdomain", "nds")
+				).add(
+						new JsonObject().put("id", "559e4331c203b4638a00ba1a").put("companyName", "Acme Inc").put("subdomain", "acme")
+				);
+			System.out.println(resJson.encode());
+			
+			routingContext.response().putHeader("content-type", "application/json").end(resJson.encode());
+		});
+		router.get("/Services/rest/company/:companyId/sites/:siteId/departments").handler(this::handleGetDepartmentsOfSite);
 
 		// StaticHanlder for loading frontend angular app
 		router.route().handler(StaticHandler.create()::handle);
@@ -105,6 +119,26 @@ public class LoginMicroService extends AbstractVerticle{
     	String userName;
     	String password;
     }
+	private void handleGetDepartmentsOfSite(RoutingContext routingContext) {
+		JsonArray resJson = new JsonArray().add(
+				new JsonObject()
+				.put("id", "55716669eec5ca2b6ddf5628")
+				.put("deptName", "Sales")
+				.put("siteId", "55716669eec5ca2b6ddf5627")
+			);
+		routingContext.response().putHeader("content-type", "application/json").end(resJson.encode());
+	}
+	
+	private void handleGetSitesOfCompany(RoutingContext routingContext) {	
+		JsonArray resJson = new JsonArray().add(
+				new JsonObject()
+				.put("id", "55716669eec5ca2b6ddf5627")
+				.put("siteName", "Acme Inc")
+				.put("companyId", "55716669eec5ca2b6ddf5626")
+				.put("subdomain", "acme")
+			);
+		routingContext.response().putHeader("content-type", "application/json").end(resJson.encode());
+	}
 	private boolean GetCredentials(final String authorization, Credentials credObject){
 		boolean status = false;
 		if (authorization != null && authorization.startsWith("Basic")) {
@@ -176,7 +210,6 @@ public class LoginMicroService extends AbstractVerticle{
 		
 				Datastore dataStore = ServicesFactory.getMongoDB();
 				// Get Request Body that contains login details
-				
 				HttpServerRequest request = routingContext.request();
 				final String authorization = request.getHeader("Authorization");
 				Credentials cred = new Credentials();
@@ -231,26 +264,26 @@ public class LoginMicroService extends AbstractVerticle{
 					// Query DB for the User matching with the given userName
 					List<User> users = dataStore.createQuery(User.class)
 							.field("userName").equal(cred.userName).asList();
-						
+					ArrayList<User> userList = new ArrayList<User>();
 						for (User u : users) {
+							
 							// See if user's password matched
 							if (u.getPassword().equals(cred.password) && u.getUserName().equals(cred.userName)) {
 								System.out.println(cred.userName +" User Authentication Success !!!");
 								// Add to the list of LoggedInUsers hashmap
-								ArrayList<User> userList = new ArrayList<User>();
+								
 								for(Map.Entry<String, User> m: LoginMicroService.loggedInUsers.entrySet()){  
 									userList.add(m.getValue());  
 								}  
-								ObjectMapper mapper = new ObjectMapper();
-								JsonNode node = mapper.valueToTree(userList);
-								System.out.println("Logged in users List: " + node.toString());
-								response.putHeader("content-type", "application/json");
-								String json = node.toString();
-								response.setStatusCode(200).end(json);
 								break;
 							}
 						}
-
+						ObjectMapper mapper = new ObjectMapper();
+						JsonNode node = mapper.valueToTree(userList);
+						System.out.println("Logged in users List: " + node.toString());
+						response.putHeader("content-type", "application/json");
+						String json = node.toString();
+						response.setStatusCode(200).end(json);
 				}
 			}
 		}
