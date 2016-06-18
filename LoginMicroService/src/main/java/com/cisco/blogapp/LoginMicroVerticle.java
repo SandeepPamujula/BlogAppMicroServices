@@ -1,46 +1,23 @@
 package com.cisco.blogapp;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Base64;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import org.bson.types.ObjectId;
-
-import io.vertx.core.json.EncodeException;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.mongodb.morphia.Datastore;
 
-//import org.json.JSONException;
-//import org.json.JSONObject;
-//
-//import java.io.BufferedReader;
-//import java.io.IOException;
-//import java.io.InputStream;
-//import java.io.InputStreamReader;
-//import java.io.Reader;
-//import java.net.URL;
-//import java.nio.charset.Charset;
-
 import com.cisco.blogapp.infra.ServicesFactory;
 import com.cisco.blogapp.model.User;
 import com.cisco.blogapp.model.UserDTO;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.vertx.core.AbstractVerticle;
-import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.MultiMap;
@@ -48,25 +25,22 @@ import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
-import io.vertx.core.json.JsonArray;
-import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
-import io.vertx.ext.web.Session;
 import io.vertx.ext.web.handler.BodyHandler;
 import io.vertx.ext.web.handler.CookieHandler;
 import io.vertx.ext.web.handler.SessionHandler;
 import io.vertx.ext.web.handler.StaticHandler;
 import io.vertx.ext.web.sstore.LocalSessionStore;
 
-public class LoginMicroService extends AbstractVerticle{
+public class LoginMicroVerticle extends AbstractVerticle{
 	
 	public static void main(String args[]){
 		
 		VertxOptions options = new VertxOptions().setWorkerPoolSize(10);
 		Vertx vertx = Vertx.vertx(options);
-		vertx.deployVerticle(LoginMicroService.class.getName(), stringAsyncResult -> {
-			System.out.println(LoginMicroService.class.getName() + "Deployment Completed");
+		vertx.deployVerticle(LoginMicroVerticle.class.getName(), stringAsyncResult -> {
+			System.out.println(LoginMicroVerticle.class.getName() + "Deployment Completed");
 		});
 	}
 	// Store the list of logged In Users
@@ -82,8 +56,8 @@ public class LoginMicroService extends AbstractVerticle{
 		// for cookies and sessions
 		
 	    router.route().handler(BodyHandler.create());
-	    router.route().handler(CookieHandler.create());
-	    router.route().handler(SessionHandler.create(sessionStore));
+//	    router.route().handler(CookieHandler.create());
+//	    router.route().handler(SessionHandler.create(sessionStore));
 	    
 		router.post("/Services/rest/user/register").handler(new UserRegister());
 		router.get("/Services/rest/user").handler(new UserLoader());
@@ -105,8 +79,9 @@ public class LoginMicroService extends AbstractVerticle{
 
 		// StaticHanlder for loading frontend angular app
 		router.route().handler(StaticHandler.create()::handle);
-		vertx.createHttpServer().requestHandler(router::accept).listen(8086);	
-		System.out.println("BlogAppVerticle verticle started");
+		int port = 8086;
+		vertx.createHttpServer().requestHandler(router::accept).listen(port);	
+		System.out.println("BlogAppVerticle verticle started: "+port);
 		startFuture.complete();
 	}
 	
@@ -225,7 +200,7 @@ public class LoginMicroService extends AbstractVerticle{
 						if (u.getPassword().equals(cred.password) && u.getUserName().equals(cred.userName)) {
 							System.out.println(cred.userName +" User Authentication Success !!!");
 							// Add to the list of LoggedInUsers hashmap
-							LoginMicroService.loggedInUsers.put(u.getUserName(), u);
+							LoginMicroVerticle.loggedInUsers.put(u.getUserName(), u);
 							response.setStatusCode(204).end("User Authentication Success !!!");
 							break;
 						}
@@ -272,7 +247,7 @@ public class LoginMicroService extends AbstractVerticle{
 								System.out.println(cred.userName +" User Authentication Success !!!");
 								// Add to the list of LoggedInUsers hashmap
 								
-								for(Map.Entry<String, User> m: LoginMicroService.loggedInUsers.entrySet()){  
+								for(Map.Entry<String, User> m: LoginMicroVerticle.loggedInUsers.entrySet()){  
 									userList.add(m.getValue());  
 								}  
 								break;

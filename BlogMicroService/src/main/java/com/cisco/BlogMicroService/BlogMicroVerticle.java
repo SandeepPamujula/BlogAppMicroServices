@@ -6,9 +6,7 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.bson.types.ObjectId;
 import org.mongodb.morphia.Datastore;
@@ -23,20 +21,14 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.vertx.core.AbstractVerticle;
-import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
-import io.vertx.core.json.JsonArray;
-import io.vertx.core.json.JsonObject;
-import io.vertx.core.json.EncodeException;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
-import io.vertx.ext.web.Session;
 import io.vertx.ext.web.handler.BodyHandler;
 import io.vertx.ext.web.handler.CookieHandler;
 import io.vertx.ext.web.handler.SessionHandler;
@@ -53,8 +45,6 @@ public class BlogMicroVerticle extends AbstractVerticle{
 			System.out.println(BlogMicroVerticle.class.getName() + "Deployment Completed");
 		});
 	}
-	// Store the list of logged In Users
-	//public static HashMap<String, User> loggedInUsers = new HashMap<String, User>();
 	
 	@Override
 	public void start(Future<Void> startFuture){
@@ -75,10 +65,10 @@ public class BlogMicroVerticle extends AbstractVerticle{
 
 
 		// StaticHanlder for loading frontend angular app
-				router.route().handler(StaticHandler.create()::handle);
-
-		vertx.createHttpServer().requestHandler(router::accept).listen(8082);	
-		System.out.println("BlogMicroVerticle verticle started");
+		router.route().handler(StaticHandler.create()::handle);
+		int port = 8082;
+		vertx.createHttpServer().requestHandler(router::accept).listen(port);	
+		System.out.println("BlogMicroVerticle verticle started: "+port);
 		startFuture.complete();
 	}
 	
@@ -226,8 +216,6 @@ class BlogGet implements Handler<RoutingContext> {
 			Credentials cred = new Credentials();
 			GetCredentials(authorization,cred);
 			System.out.println("userName :" + cred.userName + " password : " +cred.password);
-			
-			
 			
 			try {
 					dto = mapper.readValue(json, BlogDTO.class);

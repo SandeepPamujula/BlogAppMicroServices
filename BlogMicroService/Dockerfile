@@ -2,13 +2,13 @@
 FROM vertx/vertx3
 
 #                                                       
-ENV VERTICLE_NAME com.cisco.blogapp.LoginMicroVerticle
-ENV VERTICLE_FILE target/LoginMicroService-0.0.1-SNAPSHOT-fat.jar
+ENV VERTICLE_NAME com.cisco.BlogMicroService.BlogMicroVerticle
+ENV VERTICLE_FILE target/BlogMicroService-0.0.1-SNAPSHOT-fat.jar
 
 # Set the location of the verticles
 ENV VERTICLE_HOME /usr/verticles
 
-EXPOSE 8086
+EXPOSE 8082
 
 # Copy your verticle to the container                   
 COPY $VERTICLE_FILE $VERTICLE_HOME/

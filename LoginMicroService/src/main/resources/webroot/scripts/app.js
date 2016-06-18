@@ -67,7 +67,7 @@
         $http(blogReq)
          .then(function successCallback(data, status, headers, config) {
 //		$http.get('/Services/rest/blogs').success(
-				function(data, status, headers, config) {
+//				function(data, status, headers, config) {
 					$scope.blogs = data;
 					$scope.loading = false;
 				},function errorCallback(data, status, headers, config) {
