@@ -131,11 +131,11 @@ class BlogComment implements Handler<RoutingContext> {
 				System.out.println("No Valid user logged in");
 				response.setStatusCode(401).end("No Valid user logged in");
 			} else {
-				User user = dataStore.createQuery(User.class)
-						.field("userName").equal(cred.userName).get();
-				dto.setUserFirst(user.getFirst());
-				dto.setUserLast(user.getLast());
-				dto.setUserId(user.getId().toString());
+//				User user = dataStore.createQuery(User.class)
+//						.field("userName").equal(cred.userName).get();
+				dto.setUserFirst(cred.userName+" 1st");
+				dto.setUserLast(cred.userName+" L0st");
+				dto.setUserId("6666");
 				dto.setDate(new Date().getTime());
 				Comment comment = dto.toModel();
 
@@ -219,12 +219,12 @@ class BlogGet implements Handler<RoutingContext> {
 			
 			try {
 					dto = mapper.readValue(json, BlogDTO.class);
-					User user = dataStore.createQuery(User.class)
-							.field("userName").equal(cred.userName).get();
-					System.out.println(user);
-					dto.setUserFirst(user.getFirst());
-					dto.setUserLast(user.getLast());
-					dto.setUserId(user.getId().toString());
+//					User user = dataStore.createQuery(User.class)
+//							.field("userName").equal(cred.userName).get();
+//					System.out.println(user);
+					dto.setUserFirst(cred.userName+" 1st");
+					dto.setUserLast(cred.userName+" L0st");
+					dto.setUserId("6666");
 					dto.setDate(new Date().getTime());
 					Blog blog = dto.toModel();
 					dataStore.save(blog);

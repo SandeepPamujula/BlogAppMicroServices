@@ -22,7 +22,7 @@ public class ServicesFactory {
 			MongoClient mongoClient = new MongoClient(connectionString);	
 			Morphia morphia = new Morphia();
 			morphia.mapPackage("com.cisco.BlogMicroService.model");
-			Datastore datastore = morphia.createDatastore(mongoClient, "test");
+			Datastore datastore = morphia.createDatastore(mongoClient, "blogdb");
 			datastore.ensureIndexes();
 			mongoTL.set(datastore);
 			return datastore;
