@@ -5,7 +5,7 @@
 	var app = angular.module('mysocial', [ 'ngRoute','textAngular','ngWebsocket' ]);
 	app.run(function($http,$rootScope,$location,$log,$websocket) {
 		$log.debug("App run...");
-          $log.debug(">>---------   Sande 6    ------------------------------------------>   ");
+          $log.debug(">>---------   Sande 66    ------------------------------------------>   ");
 		$rootScope.currentPath = $location.path()
 	});
 	//ROUTE configurations for all views
@@ -320,12 +320,21 @@
 	//------------------------------------------------------------------------------------------------------------------
 	// Controller for new blog post view
 	//------------------------------------------------------------------------------------------------------------------
-	app.controller('BlogController',function($http, $log, $scope, $location) {
+	app.controller('BlogController',function($http, $log, $scope, $location,dataService) {
         var controller = this;
         $log.debug("Blog controller...");
         $scope.blog={};
         $scope.blog.content = 'Blog text here...';
         $scope.saveBlog = function(blog){
+            
+        $rootScope.globals = {
+                currentUser:{
+                    userName:"",
+                    password:""
+                }
+        };
+        
+        $rootScope.globals.currentUser = dataService.getUser();
 
 //					$http.post("/Services/rest/blogs", blog).success(
 //							function() {
@@ -333,7 +342,7 @@
              method: 'POST',
              url: '/Services/rest/blogs',
              headers: {
-               'Authorization': "Basic " + btoa(user.userName + ":" + user.password)
+               'Authorization': "Basic " + btoa($rootScope.globals.currentUser.userName + ":" + $rootScope.globals.currentUser.password)
              },
             data: blog
         };
