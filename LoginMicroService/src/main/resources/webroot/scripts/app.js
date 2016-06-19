@@ -320,7 +320,7 @@
 	//------------------------------------------------------------------------------------------------------------------
 	// Controller for new blog post view
 	//------------------------------------------------------------------------------------------------------------------
-	app.controller('BlogController',function($http, $log, $scope, $location,dataService) {
+	app.controller('BlogController',function($http, $log, $scope, $rootScope, $location,dataService) {
         var controller = this;
         $log.debug("Blog controller...");
         $scope.blog={};
