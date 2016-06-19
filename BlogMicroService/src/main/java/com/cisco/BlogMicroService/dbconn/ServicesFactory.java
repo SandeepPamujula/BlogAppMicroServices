@@ -21,7 +21,7 @@ public class ServicesFactory {
 //			MongoClientURI connectionString = new MongoClientURI("mongodb://localhost:27017");
 			MongoClient mongoClient = new MongoClient(connectionString);	
 			Morphia morphia = new Morphia();
-			morphia.mapPackage("com.cisco.blogapp.model");
+			morphia.mapPackage("com.cisco.BlogMicroService.model");
 			Datastore datastore = morphia.createDatastore(mongoClient, "test");
 			datastore.ensureIndexes();
 			mongoTL.set(datastore);
