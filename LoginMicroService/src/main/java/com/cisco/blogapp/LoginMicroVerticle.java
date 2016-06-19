@@ -81,15 +81,18 @@ public class LoginMicroVerticle extends AbstractVerticle{
 		router.route().handler(StaticHandler.create()::handle);
 		
 		int port = 8086;
+//		router.route().handler(StaticHandler.create().setMaxAgeSeconds(1));
+		router.route().handler(StaticHandler.create().setCachingEnabled(false));
+		
 		vertx.createHttpServer().requestHandler(router::accept).listen(port);
-		router.route().handler(StaticHandler.create().setMaxAgeSeconds(0));
-		System.out.println("BlogAppVerticle verticle started: "+port);
+		
+		System.out.println("LoginMicroVertile verticle started: "+port);
 		startFuture.complete();
 	}
 	
 	@Override
 	public void stop(Future<Void> stopFuture){
-		System.out.println("BlogAppVerticle stopped");
+		System.out.println("LoginMicroVertile stopped");
 		stopFuture.complete();
 	}
 	class Credentials{

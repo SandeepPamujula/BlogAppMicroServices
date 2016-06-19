@@ -5,7 +5,7 @@
 	var app = angular.module('mysocial', [ 'ngRoute','textAngular','ngWebsocket' ]);
 	app.run(function($http,$rootScope,$location,$log,$websocket) {
 		$log.debug("App run...");
-          $log.debug(">>---------   hii ------------------------------------------>   ");
+          $log.debug(">>---------   Sande 6    ------------------------------------------>   ");
 		$rootScope.currentPath = $location.path()
 	});
 	//ROUTE configurations for all views
