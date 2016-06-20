@@ -92,7 +92,7 @@
          .then(function successCallback(data, status, headers, config) {
 //		$http.get('/Services/rest/blogs').success(
 //				function(data, status, headers, config) {
-					$scope.blogs = data;
+					$scope.blogs = data.data;
 					$scope.loading = false;
 				},function errorCallback(data, status, headers, config) {
 //            ).error(function(data, status, headers, config) {
@@ -118,7 +118,7 @@
          .then(function successCallback(data, status, headers, config) {
                     console.log("sande AppHomeController: data "+data);
 
-					$scope.connectedUsers = data;
+					$scope.connectedUsers = data.data;
 					$scope.loading = false;
 					//Setup a websocket connection to server using current host
 					ws = $websocket.$new('ws://'+$location.host()+':'+$location.port()+'/Services/chat', ['binary', 'base64']); // instance of ngWebsocket, handled by $websocket service

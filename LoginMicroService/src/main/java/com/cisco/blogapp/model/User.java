@@ -21,7 +21,8 @@ import org.mongodb.morphia.annotations.Indexes;
 )
 public class User {
 	@Id
-    private ObjectId id;
+//	protected ObjectId id;
+	private ObjectId id;
     private String userName;
     private String first;
     private String last;
