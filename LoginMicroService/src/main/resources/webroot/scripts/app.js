@@ -183,7 +183,7 @@
                 $http(req)
                     .then(function successCallback(data, status, headers, config) {
 //					function(data, status, headers, config) {
-						$scope.blogs = data;
+						$scope.blogs = data.data;
 						$scope.loading = false;
 					},function errorCallback(data, status, headers, config) {
 //                         ).error(function(data, status, headers, config) {
