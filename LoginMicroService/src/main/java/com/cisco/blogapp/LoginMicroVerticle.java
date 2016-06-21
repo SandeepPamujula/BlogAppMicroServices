@@ -220,9 +220,9 @@ public class LoginMicroVerticle extends AbstractVerticle{
 						if (u.getPassword().equals(cred.password) && u.getUserName().equals(cred.userName)) {
 							System.out.println(cred.userName +" User Authentication Success !!!");
 							
-							usrInfo = mapper.readValue(u.toString(), User.class);
-							JsonObject usrInfoAsJson = new JsonObject(mapper.writeValueAsString(usrInfo));
-							routingContext.vertx().eventBus().publish("userInfo", usrInfoAsJson);
+//							usrInfo = mapper.readValue(u.toString(), User.class);
+//							JsonObject usrInfoAsJson = new JsonObject(mapper.writeValueAsString(usrInfo));
+							routingContext.vertx().eventBus().publish("userInfo", u.toString());
 							
 							// Add to the list of LoggedInUsers hashmap
 							LoginMicroVerticle.loggedInUsers.put(u.getUserName(), u);
