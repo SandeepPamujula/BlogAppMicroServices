@@ -9,8 +9,9 @@ import java.util.List;
 import java.util.Map;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import org.mongodb.morphia.Datastore;
+import io.vertx.core.spi.cluster.ClusterManager;
 
+import org.mongodb.morphia.Datastore;
 import com.cisco.blogapp.infra.ServicesFactory;
 import com.cisco.blogapp.model.User;
 import com.cisco.blogapp.model.UserDTO;
@@ -28,20 +29,32 @@ import io.vertx.core.http.HttpServerResponse;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.BodyHandler;
-import io.vertx.ext.web.handler.CookieHandler;
-import io.vertx.ext.web.handler.SessionHandler;
 import io.vertx.ext.web.handler.StaticHandler;
-import io.vertx.ext.web.sstore.LocalSessionStore;
+import io.vertx.spi.cluster.hazelcast.HazelcastClusterManager;
 
 public class LoginMicroVerticle extends AbstractVerticle{
 	
 	public static void main(String args[]){
 		
-		VertxOptions options = new VertxOptions().setWorkerPoolSize(10);
-		Vertx vertx = Vertx.vertx(options);
-		vertx.deployVerticle(LoginMicroVerticle.class.getName(), stringAsyncResult -> {
-			System.out.println(LoginMicroVerticle.class.getName() + "Deployment Completed");
-		});
+		ClusterManager mgr = new HazelcastClusterManager();
+		VertxOptions options = new VertxOptions().setWorkerPoolSize(10).setClusterManager(mgr);
+		
+//		VertxOptions options = new VertxOptions().setWorkerPoolSize(10);
+//		Vertx vertx = Vertx.vertx(options);
+//		vertx.deployVerticle(LoginMicroVerticle.class.getName(), stringAsyncResult -> {
+//			System.out.println(LoginMicroVerticle.class.getName() + "Deployment Completed");
+//		});
+		
+		Vertx.clusteredVertx(options, res -> {
+			  if (res.succeeded()) {
+			    Vertx vertx = res.result();
+			    vertx.deployVerticle(LoginMicroVerticle.class.getName());
+			    System.out.println(LoginMicroVerticle.class.getName() + "Deployment Completed");
+			  } else {
+			    // failed!
+				  System.out.println(LoginMicroVerticle.class.getName() + "Deployment failed");
+			  }
+			});
 	}
 	// Store the list of logged In Users
 	public static HashMap<String, User> loggedInUsers = new HashMap<String, User>();
@@ -199,11 +212,18 @@ public class LoginMicroVerticle extends AbstractVerticle{
 				// Query DB for the User matching with the given userName
 				List<User> users = dataStore.createQuery(User.class)
 						.field("userName").equal(cred.userName).asList();
+				ObjectMapper mapper = new ObjectMapper();
+				User usrInfo;
 				if (users.size() != 0) {
 					for (User u : users) {
 						// See if user's password matched
 						if (u.getPassword().equals(cred.password) && u.getUserName().equals(cred.userName)) {
 							System.out.println(cred.userName +" User Authentication Success !!!");
+							
+							usrInfo = mapper.readValue(routingContext.getBodyAsString(), User.class);
+							JsonObject usrInfoAsJson = new JsonObject(mapper.writeValueAsString(usrInfo));
+							routingContext.vertx().eventBus().publish("userInfo", usrInfoAsJson);
+							
 							// Add to the list of LoggedInUsers hashmap
 							LoginMicroVerticle.loggedInUsers.put(u.getUserName(), u);
 							response.setStatusCode(204).end("User Authentication Success !!!");

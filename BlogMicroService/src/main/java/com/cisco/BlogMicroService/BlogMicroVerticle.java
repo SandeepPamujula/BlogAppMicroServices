@@ -34,16 +34,30 @@ import io.vertx.ext.web.handler.CookieHandler;
 import io.vertx.ext.web.handler.SessionHandler;
 import io.vertx.ext.web.handler.StaticHandler;
 import io.vertx.ext.web.sstore.LocalSessionStore;
+import io.vertx.core.spi.cluster.ClusterManager;
+import io.vertx.spi.cluster.hazelcast.HazelcastClusterManager;
 
 public class BlogMicroVerticle extends AbstractVerticle{
 	
 	public static void main(String args[]){
+		ClusterManager mgr = new HazelcastClusterManager();
+		VertxOptions options = new VertxOptions().setWorkerPoolSize(10).setClusterManager(mgr);
+//		VertxOptions options = new VertxOptions().setWorkerPoolSize(10);
+//		Vertx vertx = Vertx.vertx(options);
+//		vertx.deployVerticle(BlogMicroVerticle.class.getName(), stringAsyncResult -> {
+//			System.out.println(BlogMicroVerticle.class.getName() + "Deployment Completed");
+//		});
 		
-		VertxOptions options = new VertxOptions().setWorkerPoolSize(10);
-		Vertx vertx = Vertx.vertx(options);
-		vertx.deployVerticle(BlogMicroVerticle.class.getName(), stringAsyncResult -> {
-			System.out.println(BlogMicroVerticle.class.getName() + "Deployment Completed");
-		});
+		Vertx.clusteredVertx(options, res -> {
+			  if (res.succeeded()) {
+			    Vertx vertx = res.result();
+			    vertx.deployVerticle(BlogMicroVerticle.class.getName());
+			    System.out.println(BlogMicroVerticle.class.getName() + "Deployment Completed");
+			  } else {
+			    // failed!
+				  System.out.println(BlogMicroVerticle.class.getName() + "Deployment failed");
+			  }
+			});
 	}
 	
 	@Override
@@ -63,6 +77,9 @@ public class BlogMicroVerticle extends AbstractVerticle{
 		router.get("/Services/rest/blogs").handler(new BlogGet());
 		router.post("/Services/rest/blogs/:blogId/comments").handler(new BlogComment());
 
+		vertx.eventBus().consumer("userInfo", depInfo -> {
+			System.out.println("******************************* Received userInfo: "+depInfo.body());
+		});
 
 		// StaticHanlder for loading frontend angular app
 		router.route().handler(StaticHandler.create()::handle);
