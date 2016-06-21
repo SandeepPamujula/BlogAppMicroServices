@@ -127,7 +127,10 @@ public class LoginMicroVerticle extends AbstractVerticle{
 //		router.route().handler(StaticHandler.create().setMaxAgeSeconds(1));
 		router.route().handler(StaticHandler.create().setCachingEnabled(false));
 		EventBus eb = vertx.eventBus();
-	    vertx.setPeriodic(1000, v -> eb.publish("com.cisco.userInfo", "Some news!"));
+	    vertx.setPeriodic(3000, v -> {
+	    	eb.publish("com.cisco.userInfo", "Some news!");
+	    	System.out.println("--------------------->> LoginMicroVertile: News Posted ");
+	    });
 		
 		server.requestHandler(router::accept).listen(port);
 		
