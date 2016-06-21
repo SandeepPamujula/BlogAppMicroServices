@@ -1,4 +1,4 @@
-package com.cisco.blogapp.model;
+package com.cisco.BlogMicroService.model;
 
 import java.io.Serializable;
 

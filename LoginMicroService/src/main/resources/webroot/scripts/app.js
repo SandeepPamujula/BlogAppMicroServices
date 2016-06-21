@@ -131,7 +131,9 @@
 			        	 $log.debug('The websocket server has sent the following data:');
 			        	 $log.debug(data);
 			        	 $log.debug(data.messageType);
-			        	 if(data.messageType==="UserLogin"){
+			        	 $log.debug(data.event);
+			        	 $log.debug("Tilak");
+			        	 if(data.event==="UserLogin"){
 			        		 //Add this user to list of users
 			        		 var found = false;
 			        		 for(var index in $scope.connectedUsers){
@@ -144,17 +146,44 @@
 			        			 $scope.connectedUsers.push(data.messageObject);
 			        			 $scope.$digest();
 			        		 }
-			        	 }else if(data.messageType==="chatMessage"){
+			        	 }else if(data.event==="chatMessage"){
 			        		 //Make sure chat window opensup
 			        		 $scope.showChat=true
 			        		 $log.debug("Updating chat message: ");
 			        		 $log.debug(data.messageObject);
 			        		 if($scope.chatMessages===undefined)
 			        			 $scope.chatMessages=[];
-			        		 $scope.chatMessages.push(data.messageObject);
-			        		 $log.debug("Chat Messages: ");
-			        		 $log.debug($scope.chatMessages);
-			        		 $scope.$digest();
+			        		 
+			        		
+
+//var temp = [];
+// temp.text = data.data.txt;
+//temp.sender = data.data.sender
+//$log.debug("text:"+data.data.txt);
+//$log.debug( "sender:"+data.data.sender);
+//$scope.chatMessages.push(temp);
+//$log.debug("Chat Messages: ");
+//$log.debug($scope.chatMessages);
+//$scope.$digest();
+			
+
+			        		 
+
+ var temp = [];
+temp.text = data.data.txt;
+temp.sender = data.data.sender[0].userName;
+ $log.debug("text:"+data.data.txt);
+ $log.debug( "sender:"+data.data.sender[0].userName);
+ $scope.chatMessages.push(temp);
+$log.debug("Chat Messages: ");
+ $log.debug($scope.chatMessages);
+ $scope.$digest();
+			                 
+			                 
+			        		// $scope.chatMessages.push(data.messageObject);
+//			        		 $log.debug("Chat Messages: ");
+//			        		 $log.debug($scope.chatMessages);
+//			        		 $scope.$digest();
 			        	 }
 			        });
 			        ws.$on('$close', function () {
@@ -223,11 +252,20 @@
 					});
 			};
 		
-			$scope.sendMessage = function(chatMessage){
-				$log.debug("Sending "+chatMessage);
-				ws.$emit('chatMessage', chatMessage); // send a message to the websocket server
-				$scope.chatMessage="";
-			}
+	//		$scope.sendMessage = function(chatMessage){
+//				$log.debug("Sending "+chatMessage);
+//				ws.$emit('chatMessage', chatMessage); // send a message to the websocket server
+//				$scope.chatMessage="";
+				
+			    	$scope.sendMessage = function(chatMessage){
+					$log.debug("Sending "+chatMessage);
+					var msg = { txt :chatMessage,
+					sender : $scope.connectedUsers
+					//		 txt.user = "demo"
+					}
+					ws.$emit('chatMessage', msg); // send a message to the websocket server
+					$scope.chatMessage="";
+				}
 	});
 	//------------------------------------------------------------------------------------------------------------------
 	// Controller for the login view and the registration screen

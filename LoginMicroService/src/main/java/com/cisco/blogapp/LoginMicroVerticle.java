@@ -25,7 +25,10 @@ import io.vertx.core.MultiMap;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.http.HttpServerRequest;
+import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerResponse;
+import io.vertx.core.http.ServerWebSocket;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.BodyHandler;
@@ -58,6 +61,8 @@ public class LoginMicroVerticle extends AbstractVerticle{
 	}
 	// Store the list of logged In Users
 	public static HashMap<String, User> loggedInUsers = new HashMap<String, User>();
+	public static  List<ServerWebSocket> allConnectedSockets = new ArrayList<>();
+
 	
 	@Override
 	public void start(Future<Void> startFuture){
@@ -67,6 +72,30 @@ public class LoginMicroVerticle extends AbstractVerticle{
 		
 		// Handlers to get request bodies and 
 		// for cookies and sessions
+		HttpServer server = vertx.createHttpServer();
+		server.websocketHandler(serverWebSocket -> {
+			//Got a new connection
+			System.out.println("Connected: "+serverWebSocket.remoteAddress());
+			//Store new connection in list
+			allConnectedSockets.add(serverWebSocket);
+			//Setup handler to receive the data
+			serverWebSocket.handler( handler ->{
+				String message = new String(handler.getBytes());
+				System.out.println("message: "+message);
+				//Now broadcast received message to all other clients
+				for(ServerWebSocket sock : allConnectedSockets){
+					System.out.println("Sending message to client...");
+					Buffer buf = Buffer.buffer();
+					buf.appendBytes(message.getBytes());
+					sock.writeFinalTextFrame(message);
+				}
+			});
+			//Register handler to remove connection from list when connection is closed
+			serverWebSocket.closeHandler(handler->{
+				allConnectedSockets.remove(serverWebSocket);
+			});
+			
+		});
 		
 	    router.route().handler(BodyHandler.create());
 //	    router.route().handler(CookieHandler.create());
@@ -97,11 +126,31 @@ public class LoginMicroVerticle extends AbstractVerticle{
 //		router.route().handler(StaticHandler.create().setMaxAgeSeconds(1));
 		router.route().handler(StaticHandler.create().setCachingEnabled(false));
 		
-		vertx.createHttpServer().requestHandler(router::accept).listen(port);
+		server.requestHandler(router::accept).listen(port);
 		
 		System.out.println("LoginMicroVertile verticle started: "+port);
 		startFuture.complete();
 	}
+
+	public static void sendNewUserInfo(User u) {
+		for(ServerWebSocket sock : LoginMicroVerticle.allConnectedSockets){
+			System.out.println("Sending User to client...");
+			JsonObject userInfoMsg = new JsonObject();
+			JsonObject userInfo = new JsonObject();
+			
+			userInfo.put("first", u.getFirst());
+			userInfo.put("last", u.getLast());
+			userInfo.put("username", u.getUserName());
+			/*ObjectMapper mapper = new ObjectMapper();
+			JsonNode node = mapper.valueToTree(u);*/
+			userInfoMsg.put("event", "UserLogin");
+			userInfoMsg.put("messageObject", userInfo);
+			System.out.println("New User msg: " + userInfoMsg.toString());
+			sock.writeFinalTextFrame(userInfoMsg.toString());
+			
+		}
+		}
+	
 	
 	@Override
 	public void stop(Future<Void> stopFuture){
@@ -226,6 +275,10 @@ public class LoginMicroVerticle extends AbstractVerticle{
 							System.out.println(">--------------------->>  userInfo published: "+u.toString());
 							// Add to the list of LoggedInUsers hashmap
 							LoginMicroVerticle.loggedInUsers.put(u.getUserName(), u);
+							if (LoginMicroVerticle.loggedInUsers.put(u.getUserName(), u) == null) {
+		            					System.out.println("Send New User information to clients");
+		            					LoginMicroVerticle.sendNewUserInfo(u);
+		           				 }
 							response.setStatusCode(204).end("User Authentication Success !!!");
 							break;
 						}
