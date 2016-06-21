@@ -26,6 +26,7 @@ import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.buffer.Buffer;
+import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.http.ServerWebSocket;
@@ -125,6 +126,8 @@ public class LoginMicroVerticle extends AbstractVerticle{
 		int port = 8086;
 //		router.route().handler(StaticHandler.create().setMaxAgeSeconds(1));
 		router.route().handler(StaticHandler.create().setCachingEnabled(false));
+		EventBus eb = vertx.eventBus();
+	    vertx.setPeriodic(1000, v -> eb.publish("com.cisco.userInfo", "Some news!"));
 		
 		server.requestHandler(router::accept).listen(port);
 		

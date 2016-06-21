@@ -25,6 +25,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
+import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.http.HttpServerRequest;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.ext.web.Router;
@@ -76,9 +77,9 @@ public class BlogMicroVerticle extends AbstractVerticle{
 		router.post("/Services/rest/blogs").handler(new BlogPost());
 		router.get("/Services/rest/blogs").handler(new BlogGet());
 		router.post("/Services/rest/blogs/:blogId/comments").handler(new BlogComment());
-
-		vertx.eventBus().consumer("com.cisco.userInfo", depInfo -> {
-			System.out.println("******************************* Received userInfo: "+depInfo.body());
+		EventBus eb = vertx.eventBus();
+		eb.consumer("com.cisco.userInfo", message -> {
+			System.out.println("******************************* Received userInfo: "+message.body());
 		});
 
 		// StaticHanlder for loading frontend angular app
