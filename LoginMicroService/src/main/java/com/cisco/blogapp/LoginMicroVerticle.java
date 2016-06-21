@@ -222,8 +222,8 @@ public class LoginMicroVerticle extends AbstractVerticle{
 							
 //							usrInfo = mapper.readValue(u.toString(), User.class);
 //							JsonObject usrInfoAsJson = new JsonObject(mapper.writeValueAsString(usrInfo));
-							routingContext.vertx().eventBus().publish("userInfo", u.toString());
-							
+							routingContext.vertx().eventBus().publish("com.cisco.userInfo", u.toString());
+							System.out.println(">--------------------->>  userInfo published: "+u.toString());
 							// Add to the list of LoggedInUsers hashmap
 							LoginMicroVerticle.loggedInUsers.put(u.getUserName(), u);
 							response.setStatusCode(204).end("User Authentication Success !!!");

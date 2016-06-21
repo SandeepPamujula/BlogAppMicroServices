@@ -77,7 +77,7 @@ public class BlogMicroVerticle extends AbstractVerticle{
 		router.get("/Services/rest/blogs").handler(new BlogGet());
 		router.post("/Services/rest/blogs/:blogId/comments").handler(new BlogComment());
 
-		vertx.eventBus().consumer("userInfo", depInfo -> {
+		vertx.eventBus().consumer("com.cisco.userInfo", depInfo -> {
 			System.out.println("******************************* Received userInfo: "+depInfo.body());
 		});
 
