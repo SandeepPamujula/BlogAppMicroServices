@@ -15,7 +15,7 @@
                 </member-list>
             </tcp-ip>
         </join>
-        <interfaces enabled="false">
+        <interfaces enabled="true">
             <interface>173.36.54.105</interface>
         </interfaces>
     </network>
