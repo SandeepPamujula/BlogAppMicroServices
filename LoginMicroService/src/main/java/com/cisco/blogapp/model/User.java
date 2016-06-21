@@ -10,11 +10,6 @@ import org.mongodb.morphia.annotations.Id;
 import org.mongodb.morphia.annotations.Index;
 import org.mongodb.morphia.annotations.Indexes;
 
-/**
- * User of a particular site
- * @author maruthir
- *
- */
 @Entity("users")
 @Indexes(
     @Index(value = "userName", fields = @Field("userName"))
