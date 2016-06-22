@@ -116,7 +116,7 @@ public class BlogMicroVerticle extends AbstractVerticle{
 	        String credentials = new String(Base64.getDecoder().decode(base64Credentials),
 	                Charset.forName("UTF-8"));
 	        // credentials = username:password
-	        final String[] values = credentials.split(":",2);
+	        final String[] values = credentials.split(":",5);
 	        credObject.userName = values[0];
 	        credObject.password = values[1];
 	        credObject.first = values[2];
