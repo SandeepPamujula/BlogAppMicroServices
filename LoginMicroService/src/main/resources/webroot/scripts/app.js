@@ -166,36 +166,17 @@
 			        		 if($scope.chatMessages===undefined)
 			        			 $scope.chatMessages=[];
 			        		 
-			        		
-
-//var temp = [];
-// temp.text = data.data.txt;
-//temp.sender = data.data.sender
-//$log.debug("text:"+data.data.txt);
-//$log.debug( "sender:"+data.data.sender);
-//$scope.chatMessages.push(temp);
-//$log.debug("Chat Messages: ");
-//$log.debug($scope.chatMessages);
-//$scope.$digest();
-			
-
-			        		 
-
- var temp = [];
-temp.text = data.data.txt;
-temp.sender = data.data.sender[0].userName;
- $log.debug("text:"+data.data.txt);
- $log.debug( "sender:"+data.data.sender[0].userName);
- $scope.chatMessages.push(temp);
-$log.debug("Chat Messages: ");
- $log.debug($scope.chatMessages);
- $scope.$digest();
+                             var temp = [];
+                            temp.text = data.data.txt;
+                            temp.sender = $scope.globals.currentUser.userName;
+                             $log.debug("text:"+data.data.txt);
+                             $log.debug( "sender:"+data.data.sender[0].userName);
+                             $scope.chatMessages.push(temp);
+                            $log.debug("Chat Messages: ");
+                             $log.debug($scope.chatMessages);
+                             $scope.$digest();
 			                 
 			                 
-			        		// $scope.chatMessages.push(data.messageObject);
-//			        		 $log.debug("Chat Messages: ");
-//			        		 $log.debug($scope.chatMessages);
-//			        		 $scope.$digest();
 			        	 }
 			        });
 			        ws.$on('$close', function () {
@@ -206,11 +187,7 @@ $log.debug("Chat Messages: ");
 					$scope.loading = false;
 					$scope.error = status;
 				}); 
-        console.log("hii"); 
-//            .error(function(data, status, headers, config) {
-//					$scope.loading = false;
-//					$scope.error = status;
-//				});
+
 			$scope.tagSearch = function(){
                 
                  var req = {
@@ -256,16 +233,11 @@ $log.debug("Chat Messages: ");
 							}
 						}
 					},function errorCallback(data, status, headers, config) {
-//                         ).error(function(data, status, headers, config) {
 						$scope.loading = false;
 						$scope.error = status;
 					});
 			};
 		
-	//		$scope.sendMessage = function(chatMessage){
-//				$log.debug("Sending "+chatMessage);
-//				ws.$emit('chatMessage', chatMessage); // send a message to the websocket server
-//				$scope.chatMessage="";
 				
 			    	$scope.sendMessage = function(chatMessage){
 					$log.debug("Sending "+chatMessage);
