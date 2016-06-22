@@ -14,7 +14,6 @@ import org.mongodb.morphia.Datastore;
 import com.cisco.BlogMicroService.dbconn.ServicesFactory;
 import com.cisco.BlogMicroService.model.Blog;
 import com.cisco.BlogMicroService.model.BlogDTO;
-import com.cisco.BlogMicroService.model.User;
 import com.cisco.BlogMicroService.model.Comment;
 import com.cisco.BlogMicroService.model.CommentDTO;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -41,24 +40,25 @@ import io.vertx.spi.cluster.hazelcast.HazelcastClusterManager;
 public class BlogMicroVerticle extends AbstractVerticle{
 	
 	public static void main(String args[]){
-		ClusterManager mgr = new HazelcastClusterManager();
-		VertxOptions options = new VertxOptions().setWorkerPoolSize(10).setClusterManager(mgr);
-//		VertxOptions options = new VertxOptions().setWorkerPoolSize(10);
-//		Vertx vertx = Vertx.vertx(options);
-//		vertx.deployVerticle(BlogMicroVerticle.class.getName(), stringAsyncResult -> {
-//			System.out.println(BlogMicroVerticle.class.getName() + "Deployment Completed");
-//		});
 		
-		Vertx.clusteredVertx(options, res -> {
-			  if (res.succeeded()) {
-			    Vertx vertx = res.result();
-			    vertx.deployVerticle(BlogMicroVerticle.class.getName());
-			    System.out.println(BlogMicroVerticle.class.getName() + "Deployment Completed");
-			  } else {
-			    // failed!
-				  System.out.println(BlogMicroVerticle.class.getName() + "Deployment failed");
-			  }
-			});
+		VertxOptions options = new VertxOptions().setWorkerPoolSize(10);
+		Vertx vertx = Vertx.vertx(options);
+		vertx.deployVerticle(BlogMicroVerticle.class.getName(), stringAsyncResult -> {
+			System.out.println(BlogMicroVerticle.class.getName() + "Deployment Completed");
+		});
+		
+//		ClusterManager mgr = new HazelcastClusterManager();
+//		VertxOptions options = new VertxOptions().setWorkerPoolSize(10).setClusterManager(mgr);
+//		Vertx.clusteredVertx(options, res -> {
+//			  if (res.succeeded()) {
+//			    Vertx vertx = res.result();
+//			    vertx.deployVerticle(BlogMicroVerticle.class.getName());
+//			    System.out.println(BlogMicroVerticle.class.getName() + "Deployment Completed");
+//			  } else {
+//			    // failed!
+//				  System.out.println(BlogMicroVerticle.class.getName() + "Deployment failed");
+//			  }
+//			});
 	}
 	
 	@Override
@@ -77,10 +77,11 @@ public class BlogMicroVerticle extends AbstractVerticle{
 		router.post("/Services/rest/blogs").handler(new BlogPost());
 		router.get("/Services/rest/blogs").handler(new BlogGet());
 		router.post("/Services/rest/blogs/:blogId/comments").handler(new BlogComment());
-		EventBus eb = vertx.eventBus();
-		eb.consumer("com.cisco.userInfo", message -> {
-			System.out.println("******************************* Received userInfo: "+message.body());
-		});
+
+//		EventBus eb = vertx.eventBus();
+//		eb.consumer("com.cisco.userInfo", message -> {
+//			System.out.println("******************************* Received userInfo: "+message.body());
+//		});
 
 		// StaticHanlder for loading frontend angular app
 		router.route().handler(StaticHandler.create()::handle);
@@ -100,6 +101,9 @@ public class BlogMicroVerticle extends AbstractVerticle{
 	class Credentials{
 		String userName;
 		String password;
+		String first;
+		String last;
+		String id;
 	
 		
 	}
@@ -115,7 +119,10 @@ public class BlogMicroVerticle extends AbstractVerticle{
 	        final String[] values = credentials.split(":",2);
 	        credObject.userName = values[0];
 	        credObject.password = values[1];
-	        System.out.println("user and password :"+values[0]+" " +values[1]);
+	        credObject.first = values[2];
+	        credObject.last = values[3];
+	        credObject.id = values[4];
+	        System.out.println("user and password :"+values[0]+" " +values[1]+" "+values[2]+" " +values[3]+" "+values[4]);
 	    }
 		return status;
 	}
@@ -151,9 +158,9 @@ class BlogComment implements Handler<RoutingContext> {
 			} else {
 //				User user = dataStore.createQuery(User.class)
 //						.field("userName").equal(cred.userName).get();
-				dto.setUserFirst(cred.userName+" 1st");
-				dto.setUserLast(cred.userName+" L0st");
-				dto.setUserId("6666");
+				dto.setUserFirst(cred.first);
+				dto.setUserLast(cred.last);
+				dto.setUserId(cred.id);
 				dto.setDate(new Date().getTime());
 				Comment comment = dto.toModel();
 
@@ -240,9 +247,9 @@ class BlogGet implements Handler<RoutingContext> {
 //					User user = dataStore.createQuery(User.class)
 //							.field("userName").equal(cred.userName).get();
 //					System.out.println(user);
-					dto.setUserFirst(cred.userName+" 1st");
-					dto.setUserLast(cred.userName+" L0st");
-					dto.setUserId("6666");
+					dto.setUserFirst(cred.first);
+					dto.setUserLast(cred.last);
+					dto.setUserId(cred.id);
 					dto.setDate(new Date().getTime());
 					Blog blog = dto.toModel();
 					dataStore.save(blog);

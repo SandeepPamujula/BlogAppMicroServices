@@ -40,25 +40,27 @@ public class LoginMicroVerticle extends AbstractVerticle{
 	
 	public static void main(String args[]){
 		
-		ClusterManager mgr = new HazelcastClusterManager();
-		VertxOptions options = new VertxOptions().setWorkerPoolSize(10).setClusterManager(mgr);
 		
-//		VertxOptions options = new VertxOptions().setWorkerPoolSize(10);
-//		Vertx vertx = Vertx.vertx(options);
-//		vertx.deployVerticle(LoginMicroVerticle.class.getName(), stringAsyncResult -> {
-//			System.out.println(LoginMicroVerticle.class.getName() + "Deployment Completed");
-//		});
 		
-		Vertx.clusteredVertx(options, res -> {
-			  if (res.succeeded()) {
-			    Vertx vertx = res.result();
-			    vertx.deployVerticle(LoginMicroVerticle.class.getName());
-			    System.out.println(LoginMicroVerticle.class.getName() + "Deployment Completed");
-			  } else {
-			    // failed!
-				  System.out.println(LoginMicroVerticle.class.getName() + "Deployment failed");
-			  }
-			});
+		VertxOptions options = new VertxOptions().setWorkerPoolSize(10);
+		Vertx vertx = Vertx.vertx(options);
+		vertx.deployVerticle(LoginMicroVerticle.class.getName(), stringAsyncResult -> {
+			System.out.println(LoginMicroVerticle.class.getName() + "Deployment Completed");
+		});
+		
+		
+//		ClusterManager mgr = new HazelcastClusterManager();
+//		VertxOptions options = new VertxOptions().setWorkerPoolSize(10).setClusterManager(mgr);
+//		Vertx.clusteredVertx(options, res -> {
+//			  if (res.succeeded()) {
+//			    Vertx vertx = res.result();
+//			    vertx.deployVerticle(LoginMicroVerticle.class.getName());
+//			    System.out.println(LoginMicroVerticle.class.getName() + "Deployment Completed");
+//			  } else {
+//			    // failed!
+//				  System.out.println(LoginMicroVerticle.class.getName() + "Deployment failed");
+//			  }
+//			});
 	}
 	// Store the list of logged In Users
 	public static HashMap<String, User> loggedInUsers = new HashMap<String, User>();
@@ -126,11 +128,12 @@ public class LoginMicroVerticle extends AbstractVerticle{
 		int port = 8086;
 //		router.route().handler(StaticHandler.create().setMaxAgeSeconds(1));
 		router.route().handler(StaticHandler.create().setCachingEnabled(false));
-		EventBus eb = vertx.eventBus();
-	    vertx.setPeriodic(3000, v -> {
-	    	eb.publish("com.cisco.userInfo", "Some news!");
-	    	System.out.println("--------------------->> LoginMicroVertile: News Posted ");
-	    });
+
+//		EventBus eb = vertx.eventBus();
+//	    vertx.setPeriodic(3000, v -> {
+//	    	eb.publish("com.cisco.userInfo", "Some news!");
+//	    	System.out.println("--------------------->> LoginMicroVertile: News Posted ");
+//	    });
 		
 		server.requestHandler(router::accept).listen(port);
 		
@@ -277,7 +280,9 @@ public class LoginMicroVerticle extends AbstractVerticle{
 							
 //							usrInfo = mapper.readValue(u.toString(), User.class);
 //							JsonObject usrInfoAsJson = new JsonObject(mapper.writeValueAsString(usrInfo));
-							routingContext.vertx().eventBus().publish("com.cisco.userInfo", u.toString());
+
+						
+//							routingContext.vertx().eventBus().publish("com.cisco.userInfo", u.toString());
 							System.out.println(">--------------------->>  userInfo published: "+u.toString());
 							// Add to the list of LoggedInUsers hashmap
 							LoginMicroVerticle.loggedInUsers.put(u.getUserName(), u);

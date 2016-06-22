@@ -51,7 +51,11 @@
           // private object
           var _userObj = {
               userName: "",
-              password:""
+              password:"",
+              first: "",
+              last: "",
+              id:""
+              
           };
 
         return {
@@ -90,20 +94,16 @@
         
         $http(blogReq)
          .then(function successCallback(data, status, headers, config) {
-//		$http.get('/Services/rest/blogs').success(
-//				function(data, status, headers, config) {
 					$scope.blogs = data.data;
 					$scope.loading = false;
 				},function errorCallback(data, status, headers, config) {
-//            ).error(function(data, status, headers, config) {
 					$scope.loading = false;
 					$scope.error = status;
 				});
 		var ws=null;
         console.log("login successfull " );
-        console.log("sande1 : "+$rootScope.globals.currentUser.userName+ ":" + $rootScope.globals.currentUser.password);
+    
         
-//		$http.get('/Services/rest/user?signedIn=true').success(
             var req = {
                  method: 'GET',
                  url: '/Services/rest/user?signedIn=true',
@@ -116,10 +116,22 @@
             
         $http(req)
          .then(function successCallback(data, status, headers, config) {
-                    console.log("sande AppHomeController: data "+data);
-
+                    console.log("sande AppHomeController: data "+data.data);
 					$scope.connectedUsers = data.data;
 					$scope.loading = false;
+                
+                    var foundUser = _.find(data.data, function(user){ 
+                            if (user.userName == $rootScope.globals.currentUser.userName ){
+                                $rootScope.globals.currentUser.first = user.first;
+                                $rootScope.globals.currentUser.last = user.last;
+                                $rootScope.globals.currentUser.id = user.id;
+                                dataService.setUser($rootScope.globals.currentUser);
+                                return true;
+                            }
+                    });
+            
+                    if (foundUser) $log.log("user found");
+                    
 					//Setup a websocket connection to server using current host
 					ws = $websocket.$new('ws://'+$location.host()+':'+$location.port()+'/Services/chat', ['binary', 'base64']); // instance of ngWebsocket, handled by $websocket service
 					$log.debug("Web socket established...");
@@ -132,7 +144,7 @@
 			        	 $log.debug(data);
 			        	 $log.debug(data.messageType);
 			        	 $log.debug(data.event);
-			        	 $log.debug("Tilak");
+			        	 
 			        	 if(data.event==="UserLogin"){
 			        		 //Add this user to list of users
 			        		 var found = false;
@@ -228,13 +240,11 @@ $log.debug("Chat Messages: ");
                      method: 'POST',
                      url: '/Services/rest/blogs/'+blogId+'/comments',
                      headers: {
-                       'Authorization': "Basic " + btoa($rootScope.globals.currentUser.userName + ":" + $rootScope.globals.currentUser.password)
+                       'Authorization': "Basic " + btoa($rootScope.globals.currentUser.userName + ":" + $rootScope.globals.currentUser.password + ":"+$rootScope.globals.currentUser.first+ ":" + $rootScope.globals.currentUser.last + ":"+$rootScope.globals.currentUser.id)
                      },
                      data: comment
                  };
                 
-//				$http.post('/Services/rest/blogs/'+blogId+'/comments',comment).success(
-//					function(data, status, headers, config) {
                 $http(req)
                     .then(function successCallback(data, status, headers, config) {
 						$scope.loading = false;
@@ -374,15 +384,13 @@ $log.debug("Chat Messages: ");
         
         $rootScope.globals.currentUser = dataService.getUser();
 
-//					$http.post("/Services/rest/blogs", blog).success(
-//							function() {
         var req = {
              method: 'POST',
              url: '/Services/rest/blogs',
              headers: {
-               'Authorization': "Basic " + btoa($rootScope.globals.currentUser.userName + ":" + $rootScope.globals.currentUser.password)
+                       'Authorization': "Basic " + btoa($rootScope.globals.currentUser.userName + ":" + $rootScope.globals.currentUser.password + ":"+$rootScope.globals.currentUser.first+ ":" + $rootScope.globals.currentUser.last + ":"+$rootScope.globals.currentUser.id)
              },
-            data: blog
+             data: blog
         };
 
         $http(req)
